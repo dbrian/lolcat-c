@@ -1,5 +1,7 @@
 .PHONY: all build clean test bench bench-quick help
 
+.DEFAULT_GOAL := all
+
 BIN      := lolcat-c
 SRC      := src/lolcat.c
 TABLES   := src/tables.h
