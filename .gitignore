@@ -1,0 +1,14 @@
+# Build artifacts
+build/
+lolcat-c
+src/tables.h
+target/
+
+# Object files / debug info
+*.o
+*.d
+*.dSYM/
+
+# OS / editor cruft
+.DS_Store
+*.swp
