@@ -61,11 +61,19 @@ typedef struct {
 
 static const char *g_prog = "lolcat-c";
 
+static void eputs(const char *text) {
+    fputs(text, stderr);
+}
+
 static void die(const char *what, const char *detail) {
-    if (detail)
-        fprintf(stderr, "%s: %s: %s\n", g_prog, what, detail);
-    else
-        fprintf(stderr, "%s: %s\n", g_prog, what);
+    eputs(g_prog);
+    eputs(": ");
+    eputs(what);
+    if (detail) {
+        eputs(": ");
+        eputs(detail);
+    }
+    eputs("\n");
     exit(1);
 }
 
@@ -1017,8 +1025,12 @@ static double parse_double(const char *arg, const char *val) {
     char *end = NULL;
     double d = strtod(val, &end);
     if (end == val || *end != '\0') {
-        fprintf(stderr, "%s: invalid value '%s' for '%s': expected a floating point number\n",
-                g_prog, val, arg);
+        eputs(g_prog);
+        eputs(": invalid value '");
+        eputs(val);
+        eputs("' for '");
+        eputs(arg);
+        eputs("': expected a floating point number\n");
         exit(1);
     }
     return d;
@@ -1052,7 +1064,10 @@ int main(int argc, char **argv) {
             if (++i >= argc) die("missing value for '-s'", NULL);
             spread = parse_double(a, argv[i]);
         } else if (a[0] == '-' && a[1] != '\0') {
-            fprintf(stderr, "%s: unknown option: %s\n", g_prog, a);
+            eputs(g_prog);
+            eputs(": unknown option: ");
+            eputs(a);
+            eputs("\n");
             return 1;
         } else {
             if (path) die("unexpected argument: only one input file is allowed", NULL);
@@ -1061,11 +1076,21 @@ int main(int argc, char **argv) {
     }
 
     if (!(frequency > 0.0) || !isfinite(frequency)) {
-        fprintf(stderr, "%s: invalid frequency: %g\n", g_prog, frequency);
+        char value[64];
+        snprintf(value, sizeof value, "%g", frequency);
+        eputs(g_prog);
+        eputs(": invalid frequency: ");
+        eputs(value);
+        eputs("\n");
         return 1;
     }
     if (!(spread > 0.0) || !isfinite(spread)) {
-        fprintf(stderr, "%s: invalid spread: %g\n", g_prog, spread);
+        char value[64];
+        snprintf(value, sizeof value, "%g", spread);
+        eputs(g_prog);
+        eputs(": invalid spread: ");
+        eputs(value);
+        eputs("\n");
         return 1;
     }
 
@@ -1075,7 +1100,12 @@ int main(int argc, char **argv) {
     if (path) {
         in_fd = open(path, O_RDONLY);
         if (in_fd < 0) {
-            fprintf(stderr, "%s: %s: %s\n", g_prog, path, strerror(errno));
+            eputs(g_prog);
+            eputs(": ");
+            eputs(path);
+            eputs(": ");
+            eputs(strerror(errno));
+            eputs("\n");
             return 1;
         }
     }
