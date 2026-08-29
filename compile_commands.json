@@ -1,0 +1,12 @@
+[
+  {
+    "directory": ".",
+    "file": "src/lolcat.c",
+    "arguments": ["clang", "-std=c11", "-Isrc", "-c", "src/lolcat.c"]
+  },
+  {
+    "directory": ".",
+    "file": "tools/gentables.c",
+    "arguments": ["clang", "-std=c11", "-c", "tools/gentables.c"]
+  }
+]

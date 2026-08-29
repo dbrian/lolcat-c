@@ -135,11 +135,29 @@ else bad "NO_COLOR passthrough"; fi
 $BIN -F "$TMP/empty.txt" > "$TMP/emptyout"
 if [ "$(wc -c < "$TMP/emptyout")" -eq 14 ]; then ok "empty input"; else bad "empty input"; fi
 
-# Error handling
-if $BIN /nonexistent-file-xyz 2>/dev/null; then bad "missing file exits nonzero"
-else ok "missing file exits nonzero"; fi
-if $BIN -f abc 2>/dev/null; then bad "bad frequency rejected"; else ok "bad frequency rejected"; fi
-if $BIN -f 0 2>/dev/null; then bad "zero frequency rejected"; else ok "zero frequency rejected"; fi
+# Error handling: commands must fail and preserve their user-facing diagnostics.
+check_error() {
+  local name=$1 expected=$2
+  shift 2
+  if "$@" >"$TMP/error.out" 2>"$TMP/error.err"; then
+    bad "$name (exits zero)"
+  elif [ "$(cat "$TMP/error.err")" = "$expected" ]; then
+    ok "$name"
+  else
+    bad "$name"
+    printf '     want: %q\n     got : %q\n' "$expected" "$(cat "$TMP/error.err")"
+  fi
+}
+check_error "missing file rejected" \
+  "$BIN: /nonexistent-file-xyz: No such file or directory" \
+  "$BIN" /nonexistent-file-xyz
+check_error "bad frequency rejected" \
+  "$BIN: invalid value 'abc' for '-f': expected a floating point number" \
+  "$BIN" -f abc
+check_error "zero frequency rejected" "$BIN: invalid frequency: 0" "$BIN" -f 0
+check_error "zero spread rejected" "$BIN: invalid spread: 0" "$BIN" -s 0
+check_error "unknown option rejected" "$BIN: unknown option: --wat" "$BIN" --wat
+check_error "missing option value rejected" "$BIN: missing value for '-f'" "$BIN" -f
 
 # --- 3. conformance with lolcat-ultra --------------------------------------
 
