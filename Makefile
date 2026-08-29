@@ -1,8 +1,9 @@
-.PHONY: all build clean test bench bench-quick help
+.PHONY: all build clean test test-asan bench bench-quick help
 
 .DEFAULT_GOAL := all
 
 BIN      := lolcat-c
+ASAN_BIN := build/lolcat-c-asan
 SRC      := src/lolcat.c
 TABLES   := src/tables.h
 GEN      := build/gentables
@@ -19,6 +20,7 @@ help:
 	@echo "Available targets:"
 	@echo "  build       - Build ./$(BIN)"
 	@echo "  test        - Run the correctness suite"
+	@echo "  test-asan   - Run malformed-input tests under AddressSanitizer"
 	@echo "  bench       - Full throughput benchmark vs lolcat-ultra and Ruby lolcat"
 	@echo "  bench-quick - Throughput benchmark vs lolcat-ultra only"
 	@echo "  clean       - Remove build artifacts"
@@ -36,8 +38,16 @@ $(TABLES): $(GEN)
 $(BIN): $(SRC) $(TABLES)
 	$(CC) $(CFLAGS) -Isrc -o $@ $(SRC) $(LDFLAGS)
 
+$(ASAN_BIN): $(SRC) $(TABLES)
+	@mkdir -p build
+	$(CC) $(CSTD) $(WARN) -O1 -g -fsanitize=address -fno-omit-frame-pointer \
+		-Isrc -o $@ $(SRC) $(LDFLAGS) -fsanitize=address
+
 test: $(BIN)
 	./tests/run_tests.sh
+
+test-asan: $(ASAN_BIN)
+	ASAN_OPTIONS=detect_leaks=0 ./tests/malformed.py ./$(ASAN_BIN)
 
 bench: $(BIN)
 	./bench/compare.sh

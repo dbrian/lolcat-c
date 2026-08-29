@@ -125,6 +125,9 @@ grep -q $'\e\[38;5;' "$TMP/ref256" && ok "256-color emits palette codes" || bad 
 
 unset LOLCAT_OFFSET
 
+if ./tests/malformed.py "$BIN"; then ok "malformed UTF-8"
+else bad "malformed UTF-8"; fi
+
 # NO_COLOR is a pure passthrough
 NO_COLOR=1 $BIN "$TMP/mixed.txt" > "$TMP/plain"
 if cmp -s "$TMP/mixed.txt" "$TMP/plain"; then ok "NO_COLOR passthrough"

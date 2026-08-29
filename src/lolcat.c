@@ -292,19 +292,24 @@ static inline uint8_t *put_ascii(uint8_t *o, unsigned idx, uint8_t c) {
  * always changes and there is nothing for a last-color check to save.
  *
  * With ASCII_ONLY the loop reduces to two stores per byte. Otherwise it also
- * splits UTF-8: the lead byte takes the color and its continuation bytes are
+ * splits UTF-8: a lead byte takes the color and its continuation bytes are
  * copied straight through, so a multi-byte character is never torn apart by an
- * escape sequence.
+ * escape sequence. Orphan continuations are copied without advancing the phase,
+ * matching the general colorizer and the output-bound accounting.
  */
 static inline uint8_t *cz_fast_line(const uint8_t *b, const uint8_t *e, uint64_t ph,
                                     uint64_t inc, uint8_t *o, const int ASCII_ONLY) {
     while (b < e) {
-        unsigned idx = PHASE_IDX(ph);
-        ph += inc;
         uint8_t c = *b++;
         if (ASCII_ONLY || c < 0x80) {
+            unsigned idx = PHASE_IDX(ph);
+            ph += inc;
             o = put_ascii(o, idx, c);
+        } else if ((c & 0xC0) == 0x80) {
+            *o++ = c;
         } else {
+            unsigned idx = PHASE_IDX(ph);
+            ph += inc;
             o = emit_tc(o, idx);
             *o++ = c;
             while (b < e && (*b & 0xC0) == 0x80) *o++ = *b++;
